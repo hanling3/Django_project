@@ -114,7 +114,7 @@ def submit(request, course_id):
     enrollment = Enrollment.objects.get(user=user, course=course)
     selected_choices = extract_answers(request)
     submission = Submission.objects.create(enrollment = enrollment, chocies= selected_choices)
-    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(submission.id)))
+    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, submission.id, )))
 
 
 
@@ -138,14 +138,15 @@ def extract_answers(request):
 def show_exam_result(request, course_id, submission_id):
     context = {}
     course = Course.objects.get(pk=course_id)
-    context['course'] course 
+    context['course'] = course 
     submission = Submission.objects.get(pk=submission_id)
     selected_choice = submission.chocies_set.all()
     context['selected_ids'] = selecyed_choice.id
-    scores = 0
+    num_of_questions = selected_choice.count()
+    passed = 0
     for choice in selected_choice:
         if choice.is_correct is True:
-            scores += 1
-    context['grade'] = scores
+            passed += 1
+    context['grade'] = (passed / num_of_questions) * 100
 
 
