@@ -113,7 +113,10 @@ def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
     selected_choices = extract_answers(request)
-    submission = Submission.objects.create(enrollment = enrollment, chocies= selected_choices)
+    submission = Submission.objects.create(enrollment = enrollment)
+    submission.chocies.set(selected_choices) 
+    # Need to get the submission object and then add it to choices field. 
+    # Can't add an object to ManyToManyField when creating an instance.
     return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, submission.id, )))
 
 
@@ -140,13 +143,14 @@ def show_exam_result(request, course_id, submission_id):
     course = Course.objects.get(pk=course_id)
     context['course'] = course 
     submission = Submission.objects.get(pk=submission_id)
-    selected_choice = submission.chocies_set.all()
-    context['selected_ids'] = selecyed_choice.id
-    num_of_questions = selected_choice.count()
-    passed = 0
-    for choice in selected_choice:
+    selected_choices = submission.chocies.all()
+    context['selected_choices'] = selected_choices
+    score = 0
+    full_score = 0
+    for choice in selected_choices:
+        full_score += choice.question.grade
         if choice.is_correct is True:
-            passed += 1
-    context['grade'] = (passed / num_of_questions) * 100
-
+            score += choice.question.grade
+    context['grade'] = (score / full_score ) * 100
+    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
